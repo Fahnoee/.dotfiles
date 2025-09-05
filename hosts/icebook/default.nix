@@ -18,6 +18,24 @@
     pkgs.git
   ];
 
+  # Define the local macOS user so Home Manager can manage it
+  users.users.mmf = {
+    name = "mmf";
+    home = "/Users/mmf";
+    shell = pkgs.zsh;
+  };
+
+  # Home Manager integration
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+  home-manager.users.mmf = {
+    # Bind HM to the local user on macOS
+    home.username = "mmf";
+    home.homeDirectory = "/Users/mmf";
+    # Reuse shared user profile
+    imports = [ ../../home/common/default.nix ];
+  };
+
   # Flakes + unfree
   nix.settings.experimental-features = "nix-command flakes";
   nixpkgs.config.allowUnfree = true;
