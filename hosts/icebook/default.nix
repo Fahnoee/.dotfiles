@@ -1,5 +1,8 @@
 { pkgs, self, ... }:
 {
+  imports = [
+    ../../modules/darwin/base.nix
+  ];
   # Keep macOS names consistent with flake attr
   networking.hostName = "icebook";
   networking.computerName = "icebook";
