@@ -2,11 +2,15 @@
 {
   imports = [
     ../../modules/darwin/base.nix
+    ../../modules/darwin/defaults.nix
   ];
   # Keep macOS names consistent with flake attr
   networking.hostName = "icebook";
   networking.computerName = "icebook";
   networking.localHostName = "icebook";
+  
+  # Required by nix-darwin for user-scoped defaults
+  system.primaryUser = "mmf";
   environment.systemPackages = [
     pkgs.vim
     pkgs._1password-gui
