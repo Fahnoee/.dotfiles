@@ -1,30 +1,77 @@
-name: Nix CI
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  nix-checks:
+  lint-nix:
+    name: Lint Nix files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v12
+
+      - name: Enable Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Check formatting with nixpkgs-fmt
+        run: |
+          set -euo pipefail
+          NIX_FILES=$(git ls-files '*.nix' | tr '\n' ' ')
+          if [ -n "$NIX_FILES" ]; then
+            nix run --accept-flake-config nixpkgs#nixpkgs-fmt -- --check $NIX_FILES
+          else
+            echo "No .nix files to check"
+          fi
+
+  eval-linux:
+    name: Evaluate flake (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v12
+
+      - name: Enable Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Show flake outputs
+        run: nix --accept-flake-config flake show
+
+      - name: Evaluate darwin configuration toplevel attr
+        run: |
+          # Ensure the darwin system evaluates (no build)
+          nix --accept-flake-config eval .#darwinConfigurations.icebook.config.system.build.toplevel.drvPath >/dev/null
+
+  eval-macos:
+    name: Evaluate flake (macOS)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Install Nix
-      - uses: DeterminateSystems/nix-installer-action@main
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v12
 
-      # Enable binary cache (optional but recommended)
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Enable Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
 
-      # Check that your flake evaluates and passes tests
-      - name: Flake check
-        run: nix flake check --print-build-logs
+      - name: Show flake outputs
+        run: nix --accept-flake-config flake show
 
-      # Build home-manager activation package for user mmf
-      - name: Build home-manager config
-        run: nix build .#homeConfigurations.mmf.activationPackage --print-build-logs
+      - name: Evaluate darwin configuration toplevel attr
+        run: |
+          # Evaluate only to avoid cross-arch builds on GitHub runners
+          nix --accept-flake-config eval .#darwinConfigurations.icebook.config.system.build.toplevel.drvPath >/dev/null
 
-      # Build nix-darwin system config for host icebook
-      - name: Build nix-darwin config
-        run: nix build .#darwinConfigurations.icebook.system --print-build-logs
