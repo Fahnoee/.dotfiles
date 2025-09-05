@@ -12,6 +12,8 @@
       NSAutomaticQuoteSubstitutionEnabled = false;
       NSAutomaticDashSubstitutionEnabled = false;
       NSAutomaticPeriodSubstitutionEnabled = false;
+      "com.apple.trackpad.scaling" = 2.0;  # Trackpad tracking speed
+
     };
 
     dock = {
